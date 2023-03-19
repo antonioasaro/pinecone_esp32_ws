@@ -14,6 +14,10 @@
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 
+#include "rotary_encoder.h"
+#include "motor_control.h"
+
+
 #ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
 #include <rmw_microros/rmw_microros.h>
 #endif
@@ -155,4 +159,6 @@ void app_main(void)
             NULL,
             CONFIG_MICRO_ROS_APP_TASK_PRIO,
             NULL);
+
+    app_main_motor_control();
 }

@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/CMakeFiles/bootloader
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/CMakeFiles/bootloader.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/CMakeFiles/bootloader-complete.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/antonio/Documents/Projects/pinecone_esp32_ws/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
