@@ -1,3 +1,6 @@
+sdkconfig
+sdkconfig.old
+
 # Prerequisites
 *.d
 
@@ -30,3 +33,21 @@
 *.exe
 *.out
 *.app
+build/.bin_timestamp
+build/.ninja_deps
+build/.ninja_log
+build/build.ninja
+build/compile_commands.json
+build/pinecone.bin
+build/pinecone.elf
+build/pinecone.map
+build/.cmake/api/v1/reply/codemodel-v2-59c3e8363b01c7df189b.json
+build/.cmake/api/v1/reply/codemodel-v2-3034eee040885422e970.json
+build/.cmake/api/v1/reply/index-2023-03-19T00-58-44-0868.json
+build/.cmake/api/v1/reply/index-2023-03-19T01-02-04-0964.json
+build/.cmake/api/v1/reply/target-__idf_esp_app_format-Debug-5a169997d43db88418d5.json
+build/.cmake/api/v1/reply/target-__idf_esp_app_format-Debug-a98846c0f14dd41fb6cc.json
+build/bootloader/.ninja_log
+build/CMakeFiles/git-data/head-ref
+build/log/idf_py_stderr_output_69169
+build/log/idf_py_stdout_output_69169
