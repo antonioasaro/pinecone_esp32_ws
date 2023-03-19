@@ -156,10 +156,10 @@ void app_main_motor_control(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(pid_loop_timer, BDC_PID_LOOP_PERIOD_MS * 1000));
 
     bdc_motor_set_speed(motor, (uint32_t) 300);
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
     ESP_LOGI(TAG, "Slow down motor");
     bdc_motor_set_speed(motor, (uint32_t) 200);
-    vTaskDelay(pdMS_TO_TICKS(8000));
+    vTaskDelay(pdMS_TO_TICKS(15000));
     ESP_LOGI(TAG, "Stop motor");
     ESP_ERROR_CHECK(bdc_motor_brake(motor));
 

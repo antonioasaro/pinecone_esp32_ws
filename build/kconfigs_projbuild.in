@@ -1,7 +1,0 @@
-source "/home/antonio/esp/esp-idf/components/bootloader/Kconfig.projbuild"
-source "/home/antonio/esp/esp-idf/components/esp_app_format/Kconfig.projbuild"
-source "/home/antonio/esp/esp-idf/components/esp_rom/Kconfig.projbuild"
-source "/home/antonio/esp/esp-idf/components/esptool_py/Kconfig.projbuild"
-source "/home/antonio/esp/esp-idf/components/partition_table/Kconfig.projbuild"
-source "/home/antonio/Documents/Projects/pinecone_esp32_ws/main/Kconfig.projbuild"
-source "/home/antonio/Documents/Projects/pinecone_esp32_ws/components/micro_ros_espidf_component/Kconfig.projbuild"
