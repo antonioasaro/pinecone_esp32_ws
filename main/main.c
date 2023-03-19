@@ -11,12 +11,12 @@
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <std_msgs/msg/int32.h>
+#include <geometry_msgs/msg/twist.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 
 #include "rotary_encoder.h"
 #include "motor_control.h"
-
 
 #ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
 #include <rmw_microros/rmw_microros.h>
@@ -29,6 +29,10 @@ rcl_publisher_t publisher;
 rcl_subscription_t subscriber;
 std_msgs__msg__Int32 send_msg;
 std_msgs__msg__Int32 recv_msg;
+
+rcl_subscription_t cmd_vel_subscriber;
+geometry_msgs__msg__Twist cmd_vel_recv_msg;
+
 
 #include "driver/gpio.h"
 #define BLINK_GPIO 2  // CONFIG_BLINK_GPIO
@@ -72,6 +76,12 @@ void subscription_callback(const void * msgin)
 	printf("Received: %d\n",  (int)  msg->data);
 }
 
+void cmd_vel_subscription_callback(const void * msgin)
+{
+	const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
+	printf("Received cmd_vel: %f, %f\n",  msg->linear.x, msg->angular.z);
+}
+
 void micro_ros_task(void * arg)
 {
 	rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -109,6 +119,12 @@ void micro_ros_task(void * arg)
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 		"int32_subscriber"));
 
+	RCCHECK(rclc_subscription_init_default(
+		&cmd_vel_subscriber,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+		"/cmd_vel"));
+
 	// Create timer.
 	rcl_timer_t timer = rcl_get_zero_initialized_timer();
 	const unsigned int timer_timeout = 5000;
@@ -120,13 +136,14 @@ void micro_ros_task(void * arg)
 
 	// Create executor.
 	rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
-	RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
+	RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
 	unsigned int rcl_wait_timeout = 1000;   // in ms
 	RCCHECK(rclc_executor_set_timeout(&executor, RCL_MS_TO_NS(rcl_wait_timeout)));
 
 	// Add timer and subscriber to executor.
 	RCCHECK(rclc_executor_add_timer(&executor, &timer));
 	RCCHECK(rclc_executor_add_subscription(&executor, &subscriber, &recv_msg, &subscription_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_add_subscription(&executor, &cmd_vel_subscriber, &cmd_vel_recv_msg, &cmd_vel_subscription_callback, ON_NEW_DATA));
 
 	// Spin forever.
 	send_msg.data = 0;
