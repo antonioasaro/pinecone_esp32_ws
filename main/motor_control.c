@@ -65,7 +65,7 @@ static void pid_loop_cb(void *args)
 ////    bdc_motor_set_speed(motor, (uint32_t)new_speed);
 }
 
-void app_main_motor_control(void)
+void motor_control_task(void)
 {
     static motor_control_context_t motor_ctrl_ctx = {
         .pcnt_encoder = NULL,

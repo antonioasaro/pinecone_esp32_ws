@@ -1,1 +1,1 @@
-void app_main_rotary_encoder();
+void rotary_encoder_task();

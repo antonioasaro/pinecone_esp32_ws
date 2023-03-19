@@ -30,7 +30,7 @@ static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_even
     return (high_task_wakeup == pdTRUE);
 }
 
-void app_main_rotary_control(void)
+void rotary_encoder_task(void)
 {
     ESP_LOGI(TAG, "install pcnt unit");
     pcnt_unit_config_t unit_config = {

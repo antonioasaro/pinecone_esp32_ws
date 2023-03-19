@@ -160,5 +160,17 @@ void app_main(void)
             CONFIG_MICRO_ROS_APP_TASK_PRIO,
             NULL);
 
-    app_main_motor_control();
+    xTaskCreate(motor_control_task,
+			"motor_control",
+            4096,
+            NULL,
+            1,
+            NULL);
+
+    xTaskCreate(rotary_encoder_task,
+			"rotary_encoder",
+            4096,
+            NULL,
+            1,
+            NULL);
 }

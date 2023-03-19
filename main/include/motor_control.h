@@ -1,1 +1,1 @@
-void app_main_motor_control();
+void motor_control_task();
