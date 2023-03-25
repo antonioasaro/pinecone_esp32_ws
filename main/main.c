@@ -74,10 +74,17 @@ void subscription_callback(const void * msgin)
 	printf("Received: %d\n",  (int)  msg->data);
 }
 
+#define WHEEL_BASE 10
+#define WHEEL_RADIUS 4
 void cmd_vel_subscription_callback(const void * msgin)
 {
+	float left_wheel_speed, right_wheel_speed;
+
 	const geometry_msgs__msg__Twist * msg = (const geometry_msgs__msg__Twist *)msgin;
 	printf("Received cmd_vel: %f, %f\n",  msg->linear.x, msg->angular.z);
+    right_wheel_speed = (msg->linear.x + (msg->angular.z * (WHEEL_BASE / 2))) / WHEEL_RADIUS;
+	printf("right_wheel_speed: %f\n",  right_wheel_speed);
+	motor_control_speed(200);
 }
 
 void micro_ros_task(void * arg)

@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <stdio.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
@@ -40,39 +39,32 @@ typedef struct {
     pid_ctrl_block_handle_t pid_ctrl;
     int report_pulses;
 } motor_control_context_t;
+static motor_control_context_t left_motor_ctrl_ctx;
+static motor_control_context_t right_motor_ctrl_ctx;
+
 
 static void pid_loop_cb(void *args)
 {
-    static int last_pulse_count = 0;
     motor_control_context_t *ctx = (motor_control_context_t *)args;
     pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
-    pid_ctrl_block_handle_t pid_ctrl = ctx->pid_ctrl;
-    bdc_motor_handle_t motor = ctx->motor;
 
     // get the result from rotary encoder
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
-    ESP_LOGI(TAG, "Current pulse count is: %d", cur_pulse_count);
+////    ESP_LOGI(TAG, "Current pulse count is: %d", cur_pulse_count);
+}
 
-    int real_pulses = cur_pulse_count - last_pulse_count;
-    last_pulse_count = cur_pulse_count;
-    ctx->report_pulses = real_pulses;
-
-    // calculate the speed error
-    float error = BDC_PID_EXPECT_SPEED - real_pulses;
-    float new_speed = 0;
-
-    // set the new speed
-    pid_compute(pid_ctrl, error, &new_speed);
-////    bdc_motor_set_speed(motor, (uint32_t)new_speed);
+void motor_control_speed(uint32_t speed) {
+    motor_control_context_t motor_ctrl_ctx;
+    motor_ctrl_ctx = right_motor_ctrl_ctx;
+    ESP_LOGI(TAG, "/cmd_vel setting speed to: %d", (int) speed);
+    bdc_motor_set_speed(motor_ctrl_ctx.motor, speed);
 }
 
 void motor_control_task(void)
 {
-    static motor_control_context_t motor_ctrl_ctx = {
-        .pcnt_encoder = NULL,
-    };
-
+    motor_control_context_t motor_ctrl_ctx;
+    motor_ctrl_ctx.pcnt_encoder = NULL;
     ESP_LOGI(TAG, "Create DC motor");
     bdc_motor_config_t motor_config = {
         .pwm_freq_hz = BDC_MCPWM_FREQ_HZ,
@@ -148,23 +140,31 @@ void motor_control_task(void)
     };
     esp_timer_handle_t pid_loop_timer = NULL;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &pid_loop_timer));
+    ESP_LOGI(TAG, "Begin PID loop");
+    ESP_ERROR_CHECK(esp_timer_start_periodic(pid_loop_timer, BDC_PID_LOOP_PERIOD_MS * 1000));
 
     ESP_LOGI(TAG, "Enable motor");
     ESP_ERROR_CHECK(bdc_motor_enable(motor));
     ESP_LOGI(TAG, "Forward motor");
     ESP_ERROR_CHECK(bdc_motor_forward(motor));
-
-    ESP_LOGI(TAG, "Start motor speed loop");
-    ESP_ERROR_CHECK(esp_timer_start_periodic(pid_loop_timer, BDC_PID_LOOP_PERIOD_MS * 1000));
-
+    ESP_LOGI(TAG, "Start motor");
     bdc_motor_set_speed(motor, (uint32_t) 300);
     vTaskDelay(pdMS_TO_TICKS(1000));
     ESP_LOGI(TAG, "Slow down motor");
-    bdc_motor_set_speed(motor, (uint32_t) 200);
-    vTaskDelay(pdMS_TO_TICKS(15000));
+    bdc_motor_set_speed(motor, (uint32_t) 250);
+    vTaskDelay(pdMS_TO_TICKS(5000));
     ESP_LOGI(TAG, "Stop motor");
-    ESP_ERROR_CHECK(bdc_motor_brake(motor));
-
+    ESP_ERROR_CHECK(bdc_motor_set_speed(motor, (uint32_t) 0));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(TAG, "Reverse motor");
+    ESP_ERROR_CHECK(bdc_motor_reverse(motor));
+    bdc_motor_set_speed(motor, (uint32_t) 200);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    ESP_LOGI(TAG, "Stop motor");
+    ESP_ERROR_CHECK(bdc_motor_set_speed(motor, (uint32_t) 0));
+ 
+    left_motor_ctrl_ctx = motor_ctrl_ctx;
+    right_motor_ctrl_ctx = motor_ctrl_ctx;
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(100));
         // the following logging format is according to the requirement of serial-studio frame format
