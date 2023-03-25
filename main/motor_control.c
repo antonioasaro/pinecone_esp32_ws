@@ -15,7 +15,7 @@
 #include "bdc_motor.h"
 #include "pid_ctrl.h"
 
-static const char *TAG = "example";
+static const char *TAG = "MOTOR_CONTROL";
 
 // Enable this config,  we will print debug formated string, which in return can be captured and parsed by Serial-Studio
 #define SERIAL_STUDIO_DEBUG           CONFIG_SERIAL_STUDIO_DEBUG
@@ -52,6 +52,8 @@ static void pid_loop_cb(void *args)
     // get the result from rotary encoder
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
+    ESP_LOGI(TAG, "Current pulse count is: %d", cur_pulse_count);
+
     int real_pulses = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
     ctx->report_pulses = real_pulses;

@@ -14,8 +14,6 @@
 #include <geometry_msgs/msg/twist.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
-
-#include "rotary_encoder.h"
 #include "motor_control.h"
 
 #ifdef CONFIG_MICRO_ROS_ESP_XRCE_DDS_MIDDLEWARE
@@ -36,7 +34,7 @@ geometry_msgs__msg__Twist cmd_vel_recv_msg;
 
 #include "driver/gpio.h"
 #define BLINK_GPIO 2  // CONFIG_BLINK_GPIO
-static const char *TAG = "example";
+static const char *TAG = "MICROROS";
 static uint8_t s_led_state = 0;
 
 static void configure_led(void)
@@ -184,10 +182,4 @@ void app_main(void)
             1,
             NULL);
 
-    xTaskCreate(rotary_encoder_task,
-			"rotary_encoder",
-            4096,
-            NULL,
-            1,
-            NULL);
 }
