@@ -26,12 +26,12 @@ static const char *TAG = "motor_control";
 #define BDC_MCPWM_GPIO_A              18
 #define BDC_MCPWM_GPIO_B              19
 
-#define BDC_ENCODER_GPIO_A            14
-#define BDC_ENCODER_GPIO_B            15
+#define BDC_ENCODER_GPIO_A            16
+#define BDC_ENCODER_GPIO_B            17
 #define BDC_ENCODER_PCNT_HIGH_LIMIT   1000
 #define BDC_ENCODER_PCNT_LOW_LIMIT    -1000
 
-#define BDC_PID_LOOP_PERIOD_MS        10   // calculate the motor speed every 10ms
+#define BDC_PID_LOOP_PERIOD_MS        1000 // calculate the motor speed every 10ms
 #define BDC_PID_EXPECT_SPEED          400  // expected motor speed, in the pulses counted by the rotary encoder
 
 typedef struct {
@@ -52,6 +52,7 @@ static void pid_loop_cb(void *args)
     // get the result from rotary encoder
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
+    ESP_LOGI(TAG, "Rotary_encoder_count %d", cur_pulse_count);
 /*    int real_pulses = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
     ctx->report_pulses = real_pulses;
