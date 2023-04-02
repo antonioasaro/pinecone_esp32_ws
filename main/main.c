@@ -16,8 +16,7 @@
 #include <rmw_microros/rmw_microros.h>
 #include "uxr/client/config.h"
 
-#include "motor_pwm.h"
-#include "rotary_pcnt.h"
+#include "motor_control.h"
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc);vTaskDelete(NULL);}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
@@ -104,13 +103,11 @@ void app_main(void)
             CONFIG_MICRO_ROS_APP_TASK_PRIO, 
             NULL); 
 
-    xTaskCreate(rotary_pcnt_task, 
-            "rotary_task", 
+    xTaskCreate(motor_control_task, 
+            "motor_task", 
             4096, 
             NULL,
             1, 
             NULL); 
-
-    motor_pwm();
 
 }
