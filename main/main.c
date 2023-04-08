@@ -42,6 +42,7 @@ void subscription_callback(const void * msgin)
 {
 	const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
 	printf("Received right_wheel_speed: %d\n",  (int)  msg->data);
+	motor_control_speed((uint32_t) msg->data);
 }
 
 void micro_ros_task(void * arg)

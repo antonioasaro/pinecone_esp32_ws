@@ -71,6 +71,12 @@ static void pid_loop_cb(void *args)
 #endif
 }
 
+#ifdef ANTONIO
+void motor_control_speed(uint32_t speed) {
+    ESP_LOGI(TAG, "Requesting new speed of: %d", (int) speed);
+}
+#endif
+
 void motor_control_task(void)
 {
     static motor_control_context_t motor_ctrl_ctx = {
