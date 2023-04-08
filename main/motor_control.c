@@ -1,3 +1,4 @@
+#define ANTONIO
 /*
  * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
@@ -52,8 +53,11 @@ static void pid_loop_cb(void *args)
     // get the result from rotary encoder
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
-    ESP_LOGI(TAG, "Rotary_encoder_count %d", cur_pulse_count);
-/*    int real_pulses = cur_pulse_count - last_pulse_count;
+
+#ifdef ANTONIO  
+    bdc_motor_set_speed(motor, (uint32_t) 200);
+#else
+    int real_pulses = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
     ctx->report_pulses = real_pulses;
 
@@ -64,8 +68,7 @@ static void pid_loop_cb(void *args)
     // set the new speed
     pid_compute(pid_ctrl, error, &new_speed);
     bdc_motor_set_speed(motor, (uint32_t)new_speed);
-*/
-    bdc_motor_set_speed(motor, (uint32_t) 200);
+#endif
 }
 
 void motor_control_task(void)
