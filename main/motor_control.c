@@ -19,43 +19,53 @@
 static const char *TAG = "motor_control";
 
 // Enable this config,  we will print debug formated string, which in return can be captured and parsed by Serial-Studio
-#define SERIAL_STUDIO_DEBUG           CONFIG_SERIAL_STUDIO_DEBUG
+#define SERIAL_STUDIO_DEBUG CONFIG_SERIAL_STUDIO_DEBUG
 
-#define BDC_MCPWM_TIMER_RESOLUTION_HZ 10000000 // 10MHz, 1 tick = 0.1us
-#define BDC_MCPWM_FREQ_HZ             25000    // 25KHz PWM
-#define BDC_MCPWM_DUTY_TICK_MAX       (BDC_MCPWM_TIMER_RESOLUTION_HZ / BDC_MCPWM_FREQ_HZ) // maximum value we can set for the duty cycle, in ticks
-#define BDC_MCPWM_GPIO_A              18
-#define BDC_MCPWM_GPIO_B              19
+#define BDC_MCPWM_TIMER_RESOLUTION_HZ 10000000                                      // 10MHz, 1 tick = 0.1us
+#define BDC_MCPWM_FREQ_HZ 25000                                                     // 25KHz PWM
+#define BDC_MCPWM_DUTY_TICK_MAX (BDC_MCPWM_TIMER_RESOLUTION_HZ / BDC_MCPWM_FREQ_HZ) // maximum value we can set for the duty cycle, in ticks
+#define BDC_MCPWM_GPIO_A 18
+#define BDC_MCPWM_GPIO_B 19
 
-#define BDC_ENCODER_GPIO_A            16
-#define BDC_ENCODER_GPIO_B            17
-#define BDC_ENCODER_PCNT_HIGH_LIMIT   1000
-#define BDC_ENCODER_PCNT_LOW_LIMIT    -1000
+#define BDC_ENCODER_GPIO_A 16
+#define BDC_ENCODER_GPIO_B 17
+#define BDC_ENCODER_PCNT_HIGH_LIMIT 1000
+#define BDC_ENCODER_PCNT_LOW_LIMIT -1000
 
-#define BDC_PID_LOOP_PERIOD_MS        1000 // calculate the motor speed every 10ms
-#define BDC_PID_EXPECT_SPEED          400  // expected motor speed, in the pulses counted by the rotary encoder
+#define BDC_PID_LOOP_PERIOD_MS 1000 // calculate the motor speed every 10ms
+#define BDC_PID_EXPECT_SPEED 400    // expected motor speed, in the pulses counted by the rotary encoder
 
-typedef struct {
+typedef struct
+{
     bdc_motor_handle_t motor;
     pcnt_unit_handle_t pcnt_encoder;
     pid_ctrl_block_handle_t pid_ctrl;
     int report_pulses;
 } motor_control_context_t;
 
+#ifdef ANTONIO
+static motor_control_context_t motor_ctrl_ctx;
+static int32_t motor_encoder_count = 0; 
+#endif
+
 static void pid_loop_cb(void *args)
 {
+#ifdef ANTONIO
+    motor_control_context_t *ctx = &motor_ctrl_ctx;
+    pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
+#else
     static int last_pulse_count = 0;
     motor_control_context_t *ctx = (motor_control_context_t *)args;
     pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
     pid_ctrl_block_handle_t pid_ctrl = ctx->pid_ctrl;
     bdc_motor_handle_t motor = ctx->motor;
+#endif
 
     // get the result from rotary encoder
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
-
-#ifdef ANTONIO  
-    bdc_motor_set_speed(motor, (uint32_t) 200);
+#ifdef ANTONIO
+    motor_encoder_count = (int32_t) cur_pulse_count;
 #else
     int real_pulses = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
@@ -72,16 +82,29 @@ static void pid_loop_cb(void *args)
 }
 
 #ifdef ANTONIO
-void motor_control_speed(uint32_t speed) {
-    ESP_LOGI(TAG, "Requesting new speed of: %d", (int) speed);
+void motor_control_set_speed(int32_t speed)
+{
+    if (speed > 0) ESP_LOGI(TAG, "Requesting new speed of: %d", (int) speed);
+    bdc_motor_handle_t motor = motor_ctrl_ctx.motor;
+    bdc_motor_set_speed(motor, (uint32_t) 200);
+}
+
+int32_t motor_control_read_encoder()
+{
+    ESP_LOGI(TAG, "Requested encoder count is: %d", (int) motor_encoder_count);
+    return(motor_encoder_count);
 }
 #endif
 
 void motor_control_task(void)
 {
+#ifdef ANTONIO
+    motor_ctrl_ctx.pcnt_encoder = NULL;
+#else
     static motor_control_context_t motor_ctrl_ctx = {
         .pcnt_encoder = NULL,
     };
+#endif
 
     ESP_LOGI(TAG, "Create DC motor");
     bdc_motor_config_t motor_config = {
@@ -138,8 +161,8 @@ void motor_control_task(void)
         .ki = 0.4,
         .kd = 0.2,
         .cal_type = PID_CAL_TYPE_INCREMENTAL,
-        .max_output   = BDC_MCPWM_DUTY_TICK_MAX - 1,
-        .min_output   = 0,
+        .max_output = BDC_MCPWM_DUTY_TICK_MAX - 1,
+        .min_output = 0,
         .max_integral = 1000,
         .min_integral = -1000,
     };
@@ -154,8 +177,7 @@ void motor_control_task(void)
     const esp_timer_create_args_t periodic_timer_args = {
         .callback = pid_loop_cb,
         .arg = &motor_ctrl_ctx,
-        .name = "pid_loop"
-    };
+        .name = "pid_loop"};
     esp_timer_handle_t pid_loop_timer = NULL;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &pid_loop_timer));
 
@@ -167,7 +189,8 @@ void motor_control_task(void)
     ESP_LOGI(TAG, "Start motor speed loop");
     ESP_ERROR_CHECK(esp_timer_start_periodic(pid_loop_timer, BDC_PID_LOOP_PERIOD_MS * 1000));
 
-    while (1) {
+    while (1)
+    {
         vTaskDelay(pdMS_TO_TICKS(100));
         // the following logging format is according to the requirement of serial-studio frame format
         // also see the dashboard config file `serial-studio-dashboard.json` for more information

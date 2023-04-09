@@ -32,17 +32,19 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 {
 	(void) last_call_time;
 	if (timer != NULL) {
+		//motor_control_encoder(send_msg->data);
+		uint32_t count = motor_control_read_encoder();
+		send_msg.data = (int32_t) count;
 		RCSOFTCHECK(rcl_publish(&publisher, &send_msg, NULL));
-		printf("Sent right_wheel_encoder: %d\n",  (int)  send_msg.data);
-		send_msg.data++;
+////		printf("Sent right_wheel_encoder: %d\n",  (int)  send_msg.data);
 	}
 }
 
 void subscription_callback(const void * msgin)
 {
 	const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
-	printf("Received right_wheel_speed: %d\n",  (int)  msg->data);
-	motor_control_speed((uint32_t) msg->data);
+////	printf("Received right_wheel_speed: %d\n",  (int)  msg->data);
+	motor_control_set_speed((int32_t) msg->data);
 }
 
 void micro_ros_task(void * arg)
@@ -84,7 +86,7 @@ void micro_ros_task(void * arg)
 
 	// Create timer.
 	rcl_timer_t timer = rcl_get_zero_initialized_timer();
-	const unsigned int timer_timeout = 1000;
+	const unsigned int timer_timeout = 1000 * 5;
 	RCCHECK(rclc_timer_init_default(
 		&timer,
 		&support,
