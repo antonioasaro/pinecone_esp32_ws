@@ -84,14 +84,19 @@ static void pid_loop_cb(void *args)
 #ifdef ANTONIO
 void motor_control_set_speed(int32_t speed)
 {
-    if (speed > 0) ESP_LOGI(TAG, "Requesting new speed of: %d", (int) speed);
+    uint32_t new_speed = 0;
     bdc_motor_handle_t motor = motor_ctrl_ctx.motor;
-    bdc_motor_set_speed(motor, (uint32_t) 200);
+    if (speed > 0) ESP_ERROR_CHECK(bdc_motor_forward(motor));
+    if (speed < 0) ESP_ERROR_CHECK(bdc_motor_reverse(motor));
+    new_speed = abs(2 * speed); 
+    if (new_speed > 400) new_speed = 400;
+    if (new_speed > 0) ESP_LOGI(TAG, "Requesting setting speed: %d", (int) speed);
+    bdc_motor_set_speed(motor, new_speed);
 }
 
 int32_t motor_control_read_encoder()
 {
-    ESP_LOGI(TAG, "Requested encoder count is: %d", (int) motor_encoder_count);
+    ESP_LOGI(TAG, "Requesting encoder status: %d", (int) motor_encoder_count);
     return(motor_encoder_count);
 }
 #endif
