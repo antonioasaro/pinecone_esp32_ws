@@ -38,7 +38,4 @@ sdkconfig*
 build/
 
 components/micro_ros_espidf_component
-components/micro_ros_espidf_component
-components/micro_ros_espidf_component
-components/micro_ros_espidf_component
-components/micro_ros_espidf_component
+
