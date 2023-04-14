@@ -158,7 +158,7 @@ void app_main(void)
             NULL);
 
 #ifdef ANTONIO
-    xTaskCreate(motor_control_task, 
+    xTaskCreate((TaskFunction_t) motor_control_task, 
             "motor_task", 
             4096, 
             NULL,
