@@ -32,7 +32,7 @@ static const char *TAG = "motor_control";
 #define BDC_ENCODER_PCNT_HIGH_LIMIT 1000
 #define BDC_ENCODER_PCNT_LOW_LIMIT -1000
 
-#define BDC_PID_LOOP_PERIOD_MS 1000 // calculate the motor speed every 10ms
+#define BDC_PID_LOOP_PERIOD_MS 10   // calculate the motor speed every 10ms
 #define BDC_PID_EXPECT_SPEED 400    // expected motor speed, in the pulses counted by the rotary encoder
 
 typedef struct
