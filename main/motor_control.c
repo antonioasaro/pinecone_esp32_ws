@@ -91,7 +91,7 @@ void motor_control_set_speed(int32_t speed)
     if (speed > 0) ESP_ERROR_CHECK(bdc_motor_forward(motor));
     if (speed < 0) ESP_ERROR_CHECK(bdc_motor_reverse(motor));
     new_speed = abs(2 * speed); 
-    if (new_speed > 400) new_speed = 400;
+    if (new_speed > 0) new_speed = 200;
     bdc_motor_set_speed(motor, new_speed);
 }
 
