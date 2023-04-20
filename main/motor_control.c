@@ -24,16 +24,24 @@ static const char *TAG = "motor_control";
 #define BDC_MCPWM_TIMER_RESOLUTION_HZ 10000000                                      // 10MHz, 1 tick = 0.1us
 #define BDC_MCPWM_FREQ_HZ 25000                                                     // 25KHz PWM
 #define BDC_MCPWM_DUTY_TICK_MAX (BDC_MCPWM_TIMER_RESOLUTION_HZ / BDC_MCPWM_FREQ_HZ) // maximum value we can set for the duty cycle, in ticks
-#define BDC_MCPWM_GPIO_A 27 // 18
-#define BDC_MCPWM_GPIO_B 26 // 19
 
-#define BDC_ENCODER_GPIO_A 14 // 16
-#define BDC_ENCODER_GPIO_B 12 // 17
+#ifdef ANTONIO
+int BDC_MCPWM_GPIO_A = 18;   // 27
+int BDC_MCPWM_GPIO_B = 19;   // 26
+int BDC_ENCODER_GPIO_A = 16; // 33
+int BDC_ENCODER_GPIO_B = 17; // 32
+#else
+#define BDC_MCPWM_GPIO_A 15
+#define BDC_MCPWM_GPIO_B 16
+#define BDC_ENCODER_GPIO_A 18
+#define BDC_ENCODER_GPIO_B 19
+#endif
+
 #define BDC_ENCODER_PCNT_HIGH_LIMIT 1000
 #define BDC_ENCODER_PCNT_LOW_LIMIT -1000
 
-#define BDC_PID_LOOP_PERIOD_MS 10   // calculate the motor speed every 10ms
-#define BDC_PID_EXPECT_SPEED 400    // expected motor speed, in the pulses counted by the rotary encoder
+#define BDC_PID_LOOP_PERIOD_MS 10 // calculate the motor speed every 10ms
+#define BDC_PID_EXPECT_SPEED 400  // expected motor speed, in the pulses counted by the rotary encoder
 
 typedef struct
 {
@@ -45,7 +53,8 @@ typedef struct
 
 #ifdef ANTONIO
 static motor_control_context_t motor_ctrl_ctx;
-static int32_t motor_encoder_count = 0; 
+static int32_t motor_encoder_count = 0;
+static int wheel = 0;
 #endif
 
 static void pid_loop_cb(void *args)
@@ -65,7 +74,7 @@ static void pid_loop_cb(void *args)
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
 #ifdef ANTONIO
-    motor_encoder_count = (int32_t) cur_pulse_count;
+    motor_encoder_count = (int32_t)cur_pulse_count;
 #else
     int real_pulses = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
@@ -85,28 +94,43 @@ static void pid_loop_cb(void *args)
 void motor_control_set_speed(int32_t speed)
 {
     uint32_t new_speed = 0;
-    if (speed > 0) ESP_LOGI(TAG, "Requesting setting speed: %d", (int) speed);
- 
+    if (speed > 0)
+        ESP_LOGI(TAG, "Requesting setting speed: %d", (int)speed);
+
     bdc_motor_handle_t motor = motor_ctrl_ctx.motor;
-    if (speed > 0) ESP_ERROR_CHECK(bdc_motor_forward(motor));
-    if (speed < 0) ESP_ERROR_CHECK(bdc_motor_reverse(motor));
-    new_speed = abs(2 * speed); 
-    if (new_speed > 0) new_speed = 200;
+    if (speed > 0)
+        ESP_ERROR_CHECK(bdc_motor_forward(motor));
+    if (speed < 0)
+        ESP_ERROR_CHECK(bdc_motor_reverse(motor));
+    new_speed = abs(2 * speed);
+    if (new_speed > 0)
+        new_speed = 200;
     bdc_motor_set_speed(motor, new_speed);
 }
 
 int32_t motor_control_read_encoder()
 {
-    ESP_LOGI(TAG, "Requesting encoder status: %d", (int) motor_encoder_count);
-    return(motor_encoder_count);
+    ESP_LOGI(TAG, "Requesting encoder status: %d", (int)motor_encoder_count);
+    return (motor_encoder_count);
 }
 #endif
 
-void motor_control_task(void)
-{
 #ifdef ANTONIO
+void motor_control_task(void * parameter)
+{
+    wheel = *((int *)parameter);
+    ESP_LOGI(TAG, "Wheel is: %d", wheel);
+    if (wheel == 1)
+    {
+        BDC_MCPWM_GPIO_A = 27;
+        BDC_MCPWM_GPIO_B = 26;
+        BDC_ENCODER_GPIO_A = 33;
+        BDC_ENCODER_GPIO_B = 32;
+    }
     motor_ctrl_ctx.pcnt_encoder = NULL;
 #else
+void motor_control_task(void)
+{
     static motor_control_context_t motor_ctrl_ctx = {
         .pcnt_encoder = NULL,
     };

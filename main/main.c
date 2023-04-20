@@ -23,8 +23,23 @@
 #include "motor_control.h"
 #endif
 
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc);vTaskDelete(NULL);}}
-#define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
+#define RCCHECK(fn)                                                                      \
+	{                                                                                    \
+		rcl_ret_t temp_rc = fn;                                                          \
+		if ((temp_rc != RCL_RET_OK))                                                     \
+		{                                                                                \
+			printf("Failed status on line %d: %d. Aborting.\n", __LINE__, (int)temp_rc); \
+			vTaskDelete(NULL);                                                           \
+		}                                                                                \
+	}
+#define RCSOFTCHECK(fn)                                                                    \
+	{                                                                                      \
+		rcl_ret_t temp_rc = fn;                                                            \
+		if ((temp_rc != RCL_RET_OK))                                                       \
+		{                                                                                  \
+			printf("Failed status on line %d: %d. Continuing.\n", __LINE__, (int)temp_rc); \
+		}                                                                                  \
+	}
 
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
@@ -34,33 +49,34 @@ std_msgs__msg__Int32 send_msg;
 std_msgs__msg__Int32 recv_msg;
 #endif
 
-void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
+void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 {
 	RCLC_UNUSED(last_call_time);
-	if (timer != NULL) {
+	if (timer != NULL)
+	{
 #ifdef ANTONIO
-		//motor_control_encoder(send_msg->data);
+		// motor_control_encoder(send_msg->data);
 		uint32_t count = motor_control_read_encoder();
-		send_msg.data = (int32_t) count;
+		send_msg.data = (int32_t)count;
 		RCSOFTCHECK(rcl_publish(&publisher, &send_msg, NULL));
 ////		printf("Sent right_wheel_encoder: %d\n",  (int)  send_msg.data);
-#else		
+#else
 		RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
 		msg.data++;
-#endif		
+#endif
 	}
 }
 
 #ifdef ANTONIO
-void subscription_callback(const void * msgin)
+void subscription_callback(const void *msgin)
 {
-	const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
-////	printf("Received right_wheel_speed: %d\n",  (int)  msg->data);
-	motor_control_set_speed((int32_t) msg->data);
+	const std_msgs__msg__Int32 *msg = (const std_msgs__msg__Int32 *)msgin;
+	////	printf("Received right_wheel_speed: %d\n",  (int)  msg->data);
+	motor_control_set_speed((int32_t)msg->data);
 }
 #endif
 
-void micro_ros_task(void * arg)
+void micro_ros_task(void *arg)
 {
 	rcl_allocator_t allocator = rcl_get_default_allocator();
 	rclc_support_t support;
@@ -87,7 +103,7 @@ void micro_ros_task(void * arg)
 		"freertos_int32_publisher"));
 #endif
 
-#ifdef ANTONIO		
+#ifdef ANTONIO
 	// Create subscriber.
 	RCCHECK(rclc_subscription_init_default(
 		&subscriber,
@@ -123,7 +139,8 @@ void micro_ros_task(void * arg)
 
 	msg.data = 0;
 
-	while(1){
+	while (1)
+	{
 		rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
 		usleep(10000);
 	}
@@ -135,7 +152,7 @@ void micro_ros_task(void * arg)
 	RCCHECK(rcl_publisher_fini(&publisher, &node));
 	RCCHECK(rcl_node_fini(&node));
 
-  	vTaskDelete(NULL);
+	vTaskDelete(NULL);
 }
 
 static size_t uart_port = UART_NUM_0;
@@ -145,30 +162,37 @@ void app_main(void)
 #if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
 	rmw_uros_set_custom_transport(
 		true,
-		(void *) &uart_port,
+		(void *)&uart_port,
 		esp32_serial_open,
 		esp32_serial_close,
 		esp32_serial_write,
-		esp32_serial_read
-	);
+		esp32_serial_read);
 #else
 #error micro-ROS transports misconfigured
-#endif  // RMW_UXRCE_TRANSPORT_CUSTOM
+#endif // RMW_UXRCE_TRANSPORT_CUSTOM
 
-    xTaskCreate(micro_ros_task,
-            "uros_task",
-            CONFIG_MICRO_ROS_APP_STACK,
-            NULL,
-            CONFIG_MICRO_ROS_APP_TASK_PRIO,
-            NULL);
+	xTaskCreate(micro_ros_task,
+				"uros_task",
+				CONFIG_MICRO_ROS_APP_STACK,
+				NULL,
+				CONFIG_MICRO_ROS_APP_TASK_PRIO,
+				NULL);
 
 #ifdef ANTONIO
-    xTaskCreate((TaskFunction_t) motor_control_task, 
-            "motor_task", 
-            4096, 
-            NULL,
-            1, 
-            NULL); 
+	const int left_wheel = 0;
+	const int right_wheel = 1;
+	xTaskCreate((TaskFunction_t)motor_control_task,
+				"left_wheel_motor_task",
+				4096,
+				(void *)&left_wheel,
+				5,
+				NULL);
+
+	// xTaskCreate((TaskFunction_t)motor_control_task,
+	//  			"right_wheel_motor_task",
+	// 			4096,
+	// 			(void *)&right_wheel,
+	// 			5,
+	// 			NULL);
 #endif
 }
-
