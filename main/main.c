@@ -73,6 +73,7 @@ void subscription_callback(const void *msgin)
 	const std_msgs__msg__Int32 *msg = (const std_msgs__msg__Int32 *)msgin;
 	////	printf("Received right_wheel_speed: %d\n",  (int)  msg->data);
 	motor_control_set_speed((int32_t)msg->data);
+	right_motor_control_set_speed((int32_t)msg->data);
 }
 #endif
 
@@ -171,13 +172,6 @@ void app_main(void)
 #error micro-ROS transports misconfigured
 #endif // RMW_UXRCE_TRANSPORT_CUSTOM
 
-	xTaskCreate(micro_ros_task,
-				"uros_task",
-				CONFIG_MICRO_ROS_APP_STACK,
-				NULL,
-				CONFIG_MICRO_ROS_APP_TASK_PRIO,
-				NULL);
-
 #ifdef ANTONIO
 	xTaskCreate((TaskFunction_t)motor_control_task,
 				"wheel_motor_task",
@@ -185,12 +179,14 @@ void app_main(void)
 				NULL,
 				1,
 				NULL);
-
-	// xTaskCreate((TaskFunction_t)motor_control_task,
-	//  			"right_wheel_motor_task",
-	// 			4096,
-	// 			(void *)&right_wheel,
-	// 			5,
-	// 			NULL);
+	sleep(5);
 #endif
+
+	xTaskCreate(micro_ros_task,
+				"uros_task",
+				CONFIG_MICRO_ROS_APP_STACK,
+				NULL,
+				CONFIG_MICRO_ROS_APP_TASK_PRIO,
+				NULL);
+
 }
