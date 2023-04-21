@@ -179,13 +179,11 @@ void app_main(void)
 				NULL);
 
 #ifdef ANTONIO
-	const int left_wheel = 0;
-	const int right_wheel = 1;
 	xTaskCreate((TaskFunction_t)motor_control_task,
-				"left_wheel_motor_task",
+				"wheel_motor_task",
 				4096,
-				(void *)&left_wheel,
-				5,
+				NULL,
+				1,
 				NULL);
 
 	// xTaskCreate((TaskFunction_t)motor_control_task,

@@ -54,7 +54,6 @@ typedef struct
 #ifdef ANTONIO
 static motor_control_context_t motor_ctrl_ctx;
 static int32_t motor_encoder_count = 0;
-static int wheel = 0;
 #endif
 
 static void pid_loop_cb(void *args)
@@ -116,20 +115,15 @@ int32_t motor_control_read_encoder()
 #endif
 
 #ifdef ANTONIO
-void motor_control_task(void * parameter)
+void motor_control_task(void)
 {
-    wheel = *((int *)parameter);
-    ESP_LOGI(TAG, "Wheel is: %d", wheel);
-    if (wheel == 1)
-    {
-        BDC_MCPWM_GPIO_A = 27;
-        BDC_MCPWM_GPIO_B = 26;
-        BDC_ENCODER_GPIO_A = 33;
-        BDC_ENCODER_GPIO_B = 32;
-    }
+        // BDC_MCPWM_GPIO_A = 27;
+        // BDC_MCPWM_GPIO_B = 26;
+        // BDC_ENCODER_GPIO_A = 33;
+        // BDC_ENCODER_GPIO_B = 32;
     motor_ctrl_ctx.pcnt_encoder = NULL;
 #else
-void motor_control_task(void)
+void app_main(void)
 {
     static motor_control_context_t motor_ctrl_ctx = {
         .pcnt_encoder = NULL,
