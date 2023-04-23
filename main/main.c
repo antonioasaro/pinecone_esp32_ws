@@ -49,7 +49,7 @@ std_msgs__msg__Int32 msg;
 #ifdef ANTONIO
 rcl_publisher_t publisher_log;
 rcl_subscription_t subscriber;
-std_msgs__msg__Int32 send_msg;
+std_msgs__msg__Int64 send_msg;
 std_msgs__msg__Int64 recv_msg;
 #endif
 
@@ -59,11 +59,10 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 	if (timer != NULL)
 	{
 #ifdef ANTONIO
-		// motor_control_encoder(send_msg->data);
-		uint32_t count = motor_control_read_encoder();
-		send_msg.data = (int32_t)count;
+		int64_t count = ((int64_t)motor_control_read_encoder()) & 0xFFFFFFFF;
+		int64_t right_count = ((int64_t)right_motor_control_read_encoder()) & 0xFFFFFFFF;
+		send_msg.data = (right_count << 32) | count;
 		RCSOFTCHECK(rcl_publish(&publisher, &send_msg, NULL));
-////		printf("Sent right_wheel_encoder: %d\n",  (int)  send_msg.data);
 #else
 		RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
 		msg.data++;
@@ -75,7 +74,7 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 void publish_rosout(char *msg_name, int32_t msg_data)
 {
 	char msg_data_str[32];
-	sprintf(msg_data_str, "%d", (int) msg_data);
+	sprintf(msg_data_str, "%d", (int)msg_data);
 
 	rcl_interfaces__msg__Log msgLog;
 	msgLog.level = rcl_interfaces__msg__Log__INFO;
@@ -94,7 +93,7 @@ void publish_rosout(char *msg_name, int32_t msg_data)
 void subscription_callback(const void *msgin)
 {
 	const std_msgs__msg__Int64 *msg = (const std_msgs__msg__Int64 *)msgin;
-	int32_t left_wheel_speed = (int32_t)((msg->data >> 0) & 0xFFFFFFFF);
+	int32_t left_wheel_speed  = (int32_t)((msg->data >> 0)  & 0xFFFFFFFF);
 	int32_t right_wheel_speed = (int32_t)((msg->data >> 32) & 0xFFFFFFFF);
 	motor_control_set_speed(left_wheel_speed);
 	right_motor_control_set_speed(right_wheel_speed);
@@ -125,9 +124,9 @@ void micro_ros_task(void *arg)
 	RCCHECK(rclc_publisher_init_default(
 		&publisher,
 		&node,
-		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int64),
 #ifdef ANTONIO
-		"right_wheel_encoder"));
+		"wheel_encoders"));
 #else
 		"freertos_int32_publisher"));
 #endif
@@ -145,7 +144,7 @@ void micro_ros_task(void *arg)
 		&subscriber,
 		&node,
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int64),
-		"wheel_speed"));
+		"wheel_speeds"));
 #endif
 
 	// create timer,
