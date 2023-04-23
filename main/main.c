@@ -20,6 +20,9 @@
 #include "esp32_serial_transport.h"
 
 #ifdef ANTONIO
+#include <string.h>
+#include <std_msgs/msg/int64.h>
+#include <rcl_interfaces/msg/log.h>
 #include "motor_control.h"
 #endif
 
@@ -44,9 +47,10 @@
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 #ifdef ANTONIO
+rcl_publisher_t publisher_log;
 rcl_subscription_t subscriber;
 std_msgs__msg__Int32 send_msg;
-std_msgs__msg__Int32 recv_msg;
+std_msgs__msg__Int64 recv_msg;
 #endif
 
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
@@ -68,12 +72,36 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 }
 
 #ifdef ANTONIO
+void publish_rosout(char *msg_name, int32_t msg_data)
+{
+	char msg_data_str[32];
+	sprintf(msg_data_str, "%d", (int) msg_data);
+
+	rcl_interfaces__msg__Log msgLog;
+	msgLog.level = rcl_interfaces__msg__Log__INFO;
+	msgLog.name.data = msg_name;
+	msgLog.name.size = strlen(msgLog.name.data);
+	msgLog.msg.data = msg_data_str;
+	msgLog.msg.size = strlen(msgLog.msg.data);
+	msgLog.file.data = "";
+	msgLog.file.size = strlen(msgLog.file.data);
+	msgLog.function.data = "";
+	msgLog.function.size = strlen(msgLog.function.data);
+	msgLog.line = 0;
+	RCSOFTCHECK(rcl_publish(&publisher_log, &msgLog, NULL));
+}
+
 void subscription_callback(const void *msgin)
 {
-	const std_msgs__msg__Int32 *msg = (const std_msgs__msg__Int32 *)msgin;
-	////	printf("Received right_wheel_speed: %d\n",  (int)  msg->data);
-	motor_control_set_speed((int32_t)msg->data);
-	right_motor_control_set_speed((int32_t)msg->data);
+	const std_msgs__msg__Int64 *msg = (const std_msgs__msg__Int64 *)msgin;
+	int32_t left_wheel_speed = (int32_t)((msg->data >> 0) & 0xFFFFFFFF);
+	int32_t right_wheel_speed = (int32_t)((msg->data >> 32) & 0xFFFFFFFF);
+	motor_control_set_speed(left_wheel_speed);
+	right_motor_control_set_speed(right_wheel_speed);
+	if (left_wheel_speed != 0)
+		publish_rosout("left_wheel", left_wheel_speed);
+	if (right_wheel_speed != 0)
+		publish_rosout("right_wheel", right_wheel_speed);
 }
 #endif
 
@@ -105,12 +133,19 @@ void micro_ros_task(void *arg)
 #endif
 
 #ifdef ANTONIO
-	// Create subscriber.
+	// create publisher
+	RCCHECK(rclc_publisher_init_default(
+		&publisher_log,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(rcl_interfaces, msg, Log),
+		"rosout"));
+
+	// create subscriber.
 	RCCHECK(rclc_subscription_init_default(
 		&subscriber,
 		&node,
-		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-		"right_wheel_speed"));
+		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int64),
+		"wheel_speed"));
 #endif
 
 	// create timer,
@@ -188,5 +223,4 @@ void app_main(void)
 				NULL,
 				CONFIG_MICRO_ROS_APP_TASK_PRIO,
 				NULL);
-
 }
