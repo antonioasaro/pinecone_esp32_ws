@@ -23,6 +23,7 @@
 #include <string.h>
 #include <std_msgs/msg/int64.h>
 #include <rcl_interfaces/msg/log.h>
+#include <math.h>
 #include "motor_control.h"
 #endif
 
@@ -47,7 +48,13 @@
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 #ifdef ANTONIO
+#define RADS_PER_ENC 1320
+#define LOOP_RATE 30
+
+void publish_rosout(char *msg_name, int32_t msg_data);
+
 rcl_publisher_t publisher_log;
+bool publisher_log_en = false;
 rcl_subscription_t subscriber;
 std_msgs__msg__Int64 send_msg;
 std_msgs__msg__Int64 recv_msg;
@@ -87,20 +94,23 @@ void publish_rosout(char *msg_name, int32_t msg_data)
 	msgLog.function.data = "";
 	msgLog.function.size = strlen(msgLog.function.data);
 	msgLog.line = 0;
-	RCSOFTCHECK(rcl_publish(&publisher_log, &msgLog, NULL));
+	if (publisher_log_en)
+		RCSOFTCHECK(rcl_publish(&publisher_log, &msgLog, NULL));
 }
 
 void subscription_callback(const void *msgin)
 {
 	const std_msgs__msg__Int64 *msg = (const std_msgs__msg__Int64 *)msgin;
-	int32_t left_wheel_speed  = (int32_t)((msg->data >> 0)  & 0xFFFFFFFF);
+	int32_t left_wheel_speed = (int32_t)((msg->data >> 0) & 0xFFFFFFFF);
 	int32_t right_wheel_speed = (int32_t)((msg->data >> 32) & 0xFFFFFFFF);
+	left_wheel_speed = (left_wheel_speed / 1000) / ((2 * M_PI) / RADS_PER_ENC) / LOOP_RATE;
+	right_wheel_speed = (right_wheel_speed / 1000) / ((2 * M_PI) / RADS_PER_ENC) / LOOP_RATE;
 	motor_control_set_speed(left_wheel_speed);
 	right_motor_control_set_speed(right_wheel_speed);
 	if (left_wheel_speed != 0)
 		publish_rosout("left_wheel", left_wheel_speed);
-	if (right_wheel_speed != 0)
-		publish_rosout("right_wheel", right_wheel_speed);
+	// if (right_wheel_speed != 0)
+	// 	publish_rosout("right_wheel", right_wheel_speed);
 }
 #endif
 
@@ -138,6 +148,7 @@ void micro_ros_task(void *arg)
 		&node,
 		ROSIDL_GET_MSG_TYPE_SUPPORT(rcl_interfaces, msg, Log),
 		"rosout"));
+	publisher_log_en = true;
 
 	// create subscriber.
 	RCCHECK(rclc_subscription_init_default(

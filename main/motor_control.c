@@ -15,6 +15,9 @@
 #include "driver/pulse_cnt.h"
 #include "bdc_motor.h"
 #include "pid_ctrl.h"
+#ifdef ANTONIO
+// extern void publish_rosout(char *msg_name, int32_t msg_data);
+#endif
 
 static const char *TAG = "motor_control";
 
@@ -45,7 +48,14 @@ static const char *TAG = "motor_control";
 #define BDC_ENCODER_PCNT_LOW_LIMIT -1000
 
 #define BDC_PID_LOOP_PERIOD_MS 10 // calculate the motor speed every 10ms
-#define BDC_PID_EXPECT_SPEED 400  // expected motor speed, in the pulses counted by the rotary encoder
+#ifdef ANTONIO
+void publish_rosout(char *msg_name, int32_t msg_data);
+
+int32_t BDC_PID_EXPECT_SPEED = 0;       // expected motor speed, in the pulses counted by the rotary encoder
+int32_t RIGHT_BDC_PID_EXPECT_SPEED = 0; // expected motor speed, in the pulses counted by the rotary encoder
+#else
+#define BDC_PID_EXPECT_SPEED 400 // expected motor speed, in the pulses counted by the rotary encoder
+#endif
 
 typedef struct
 {
@@ -64,26 +74,34 @@ static int32_t right_motor_encoder_count = 0;
 
 static void pid_loop_cb(void *args)
 {
-#ifdef ANTONIO
-    motor_control_context_t *ctx = &motor_ctrl_ctx;
-    pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
-#else
     static int last_pulse_count = 0;
     motor_control_context_t *ctx = (motor_control_context_t *)args;
     pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
     pid_ctrl_block_handle_t pid_ctrl = ctx->pid_ctrl;
     bdc_motor_handle_t motor = ctx->motor;
-#endif
 
     // get the result from rotary encoder
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
-#ifdef ANTONIO
-    motor_encoder_count = (int32_t)cur_pulse_count;
-#else
     int real_pulses = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
     ctx->report_pulses = real_pulses;
+
+#ifdef ANTONIO
+    motor_encoder_count = cur_pulse_count;
+    if (BDC_PID_EXPECT_SPEED > 0)
+    {
+        ESP_ERROR_CHECK(bdc_motor_forward(motor));
+    }
+    else
+    {
+        if (BDC_PID_EXPECT_SPEED < 0)
+        {
+            BDC_PID_EXPECT_SPEED = -BDC_PID_EXPECT_SPEED;
+            ESP_ERROR_CHECK(bdc_motor_reverse(motor));
+        }
+    }
+#endif
 
     // calculate the speed error
     float error = BDC_PID_EXPECT_SPEED - real_pulses;
@@ -92,75 +110,69 @@ static void pid_loop_cb(void *args)
     // set the new speed
     pid_compute(pid_ctrl, error, &new_speed);
     bdc_motor_set_speed(motor, (uint32_t)new_speed);
-#endif
 }
 
+#ifdef ANTONIO
 static void right_pid_loop_cb(void *args)
 {
-#ifdef ANTONIO
-    motor_control_context_t *ctx = &right_motor_ctrl_ctx;
-    pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
-#else
-    static int last_pulse_count = 0;
-    motor_control_context_t *ctx = (motor_control_context_t *)args;
-    pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
-    pid_ctrl_block_handle_t pid_ctrl = ctx->pid_ctrl;
-    bdc_motor_handle_t motor = ctx->motor;
-#endif
+    //     static int last_pulse_count = 0;
+    //     motor_control_context_t *ctx = (motor_control_context_t *)args;
+    //     pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
+    //     pid_ctrl_block_handle_t pid_ctrl = ctx->pid_ctrl;
+    //     bdc_motor_handle_t motor = ctx->motor;
 
-    // get the result from rotary encoder
-    int cur_pulse_count = 0;
-    pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
-#ifdef ANTONIO
-    right_motor_encoder_count = (int32_t)cur_pulse_count;
-#else
-    int real_pulses = cur_pulse_count - last_pulse_count;
-    last_pulse_count = cur_pulse_count;
-    ctx->report_pulses = real_pulses;
+    //     // get the result from rotary encoder
+    //     int cur_pulse_count = 0;
+    //     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
+    //     int real_pulses = cur_pulse_count - last_pulse_count;
+    //     last_pulse_count = cur_pulse_count;
+    //     ctx->report_pulses = real_pulses;
 
-    // calculate the speed error
-    float error = BDC_PID_EXPECT_SPEED - real_pulses;
-    float new_speed = 0;
+    //     // calculate the speed error
+    //     float error = RIGHT_BDC_PID_EXPECT_SPEED - real_pulses;
+    //     float new_speed = 0;
 
-    // set the new speed
-    pid_compute(pid_ctrl, error, &new_speed);
-    bdc_motor_set_speed(motor, (uint32_t)new_speed);
-#endif
+    //     // set the new speed
+    //     pid_compute(pid_ctrl, error, &new_speed);
+    //     bdc_motor_set_speed(motor, (uint32_t)new_speed);
 }
+#endif
 
 #ifdef ANTONIO
 void motor_control_set_speed(int32_t speed)
 {
-    uint32_t new_speed = 0;
+    // uint32_t new_speed = 0;
     if (speed > 0)
         ESP_LOGI(TAG, "Requesting setting left wheel speed: %d", (int)speed);
 
-    bdc_motor_handle_t motor = motor_ctrl_ctx.motor;
-    if (speed > 0)
-        ESP_ERROR_CHECK(bdc_motor_forward(motor));
-    if (speed < 0)
-        ESP_ERROR_CHECK(bdc_motor_reverse(motor));
-    new_speed = abs(2 * speed);
-    if (new_speed > 0)
-        new_speed = 200;
-    bdc_motor_set_speed(motor, new_speed);
+    // bdc_motor_handle_t motor = motor_ctrl_ctx.motor;
+    // if (speed > 0)
+    //     ESP_ERROR_CHECK(bdc_motor_forward(motor));
+    // if (speed < 0)
+    //     ESP_ERROR_CHECK(bdc_motor_reverse(motor));
+    // new_speed = abs(2 * speed);
+    // if (new_speed > 0)
+    //     new_speed = 200;
+    // bdc_motor_set_speed(motor, new_speed);
+    BDC_PID_EXPECT_SPEED = speed;
 }
 
 void right_motor_control_set_speed(int32_t speed)
 {
-    uint32_t new_speed = 0;
+    // uint32_t new_speed = 0;
     if (speed > 0)
         ESP_LOGI(TAG, "Requesting setting right wheel speed: %d", (int)speed);
 
-    bdc_motor_handle_t motor = right_motor_ctrl_ctx.motor;
-    if (speed < 0)
-        ESP_ERROR_CHECK(bdc_motor_forward(motor));
-    if (speed > 0)
-        ESP_ERROR_CHECK(bdc_motor_reverse(motor));
-    new_speed = abs(2 * speed);
-    if (new_speed > 0)
-        new_speed = 300;
-    bdc_motor_set_speed(motor, new_speed);
+    // bdc_motor_handle_t motor = right_motor_ctrl_ctx.motor;
+    // if (speed < 0)
+    //     ESP_ERROR_CHECK(bdc_motor_forward(motor));
+    // if (speed > 0)
+    //     ESP_ERROR_CHECK(bdc_motor_reverse(motor));
+    // new_speed = abs(2 * speed);
+    // if (new_speed > 0)
+    //     new_speed = 300;
+    // bdc_motor_set_speed(motor, new_speed);
+    RIGHT_BDC_PID_EXPECT_SPEED = speed;
 }
 
 int32_t motor_control_read_encoder()
@@ -179,10 +191,10 @@ int32_t right_motor_control_read_encoder()
 #ifdef ANTONIO
 void motor_control_task(void)
 {
-        // BDC_MCPWM_GPIO_A = 27;
-        // BDC_MCPWM_GPIO_B = 26;
-        // BDC_ENCODER_GPIO_A = 33;
-        // BDC_ENCODER_GPIO_B = 32;
+    // BDC_MCPWM_GPIO_A = 27;
+    // BDC_MCPWM_GPIO_B = 26;
+    // BDC_ENCODER_GPIO_A = 33;
+    // BDC_ENCODER_GPIO_B = 32;
     motor_ctrl_ctx.pcnt_encoder = NULL;
 #else
 void app_main(void)
