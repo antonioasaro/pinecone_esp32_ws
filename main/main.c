@@ -161,7 +161,6 @@ void micro_ros_task(void *arg)
 	// create timer,
 	rcl_timer_t timer;
 #ifdef ANTONIO
-#define LOOP_RATE 30
 	const unsigned int timer_timeout = 1000 / LOOP_RATE;
 #else
 	const unsigned int timer_timeout = 1000;

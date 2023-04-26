@@ -187,10 +187,6 @@ int32_t right_motor_control_read_encoder()
 #ifdef ANTONIO
 void motor_control_task(void)
 {
-    // BDC_MCPWM_GPIO_A = 27;
-    // BDC_MCPWM_GPIO_B = 26;
-    // BDC_ENCODER_GPIO_A = 33;
-    // BDC_ENCODER_GPIO_B = 32;
     motor_ctrl_ctx.pcnt_encoder = NULL;
 #else
 void app_main(void)
