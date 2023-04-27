@@ -49,10 +49,10 @@ rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 #ifdef ANTONIO
 #define RADS_PER_ENC 1320
-#define LOOP_RATE 30
+#define PID_LOOP_RATE 100
+#define DIFFD_LOOP_RATE 30
 
 void publish_rosout(char *msg_name, int32_t msg_data);
-
 rcl_publisher_t publisher_log;
 bool publisher_log_en = false;
 rcl_subscription_t subscriber;
@@ -103,12 +103,12 @@ void subscription_callback(const void *msgin)
 	const std_msgs__msg__Int64 *msg = (const std_msgs__msg__Int64 *)msgin;
 	int32_t left_wheel_speed = (int32_t)((msg->data >> 0) & 0xFFFFFFFF);
 	int32_t right_wheel_speed = (int32_t)((msg->data >> 32) & 0xFFFFFFFF);
-	left_wheel_speed = (left_wheel_speed / 1000) / ((2 * M_PI) / RADS_PER_ENC) / LOOP_RATE;
-	right_wheel_speed = (right_wheel_speed / 1000) / ((2 * M_PI) / RADS_PER_ENC) / LOOP_RATE;
+	left_wheel_speed = (left_wheel_speed / 1000) / ((2 * M_PI) / RADS_PER_ENC) / PID_LOOP_RATE;
+	right_wheel_speed = (right_wheel_speed / 1000) / ((2 * M_PI) / RADS_PER_ENC) / PID_LOOP_RATE;
 	motor_control_set_speed(left_wheel_speed);
 	right_motor_control_set_speed(right_wheel_speed);
-	if (left_wheel_speed != 0)
-		publish_rosout("left_wheel", left_wheel_speed);
+	// if (left_wheel_speed != 0)
+	// 	publish_rosout("left_wheel", left_wheel_speed);
 	// if (right_wheel_speed != 0)
 	// 	publish_rosout("right_wheel", right_wheel_speed);
 }
@@ -161,7 +161,7 @@ void micro_ros_task(void *arg)
 	// create timer,
 	rcl_timer_t timer;
 #ifdef ANTONIO
-	const unsigned int timer_timeout = 1000 / LOOP_RATE;
+	const unsigned int timer_timeout = 1000 / DIFFD_LOOP_RATE;
 #else
 	const unsigned int timer_timeout = 1000;
 #endif

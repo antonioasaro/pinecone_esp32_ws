@@ -144,15 +144,28 @@ static void right_pid_loop_cb(void *args)
     }
     // calculate the speed error
     float error = abs(RIGHT_BDC_PID_EXPECT_SPEED) - abs(real_pulses);
+    float new_speed = 0;
+
+    // temporary to fix broken encoders
+    if (RIGHT_BDC_PID_EXPECT_SPEED == 0)
+    {
+        bdc_motor_set_speed(motor, 0);
+    }
+    else
+    {
+        // set the new speed
+        pid_compute(pid_ctrl, error, &new_speed);
+        bdc_motor_set_speed(motor, (uint32_t)new_speed);
+    }
 #else
     // calculate the speed error
     float error = BDC_PID_EXPECT_SPEED - real_pulses;
-#endif
     float new_speed = 0;
 
     // set the new speed
     pid_compute(pid_ctrl, error, &new_speed);
     bdc_motor_set_speed(motor, (uint32_t)new_speed);
+#endif
 }
 #endif
 
