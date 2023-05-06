@@ -36,7 +36,7 @@ static const char *TAG = "motor_control";
 #define RIGHT_BDC_MCPWM_GPIO_A 27
 #define RIGHT_BDC_MCPWM_GPIO_B 26
 #define RIGHT_BDC_ENCODER_GPIO_A 33
-#define RIGHT_BDC_ENCODER_GPIO_B 32
+#define RIGHT_BDC_ENCODER_GPIO_B 34
 #else
 #define BDC_MCPWM_GPIO_A 15
 #define BDC_MCPWM_GPIO_B 16
@@ -193,7 +193,7 @@ int32_t motor_control_read_encoder()
 int32_t right_motor_control_read_encoder()
 {
     ESP_LOGI(TAG, "Requesting right wheel encoder status: %d", (int)motor_encoder_count);
-    return (right_motor_encoder_count);
+    return (-1 * right_motor_encoder_count);
 }
 #endif
 

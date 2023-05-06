@@ -53,8 +53,8 @@ std_msgs__msg__Int32 msg;
 #define DIFFD_LOOP_RATE 30
 
 void publish_rosout(char *msg_name, int32_t msg_data);
-rcl_publisher_t publisher_log;
 bool publisher_log_en = false;
+rcl_publisher_t publisher_log;
 rcl_subscription_t subscriber;
 std_msgs__msg__Int64 send_msg;
 std_msgs__msg__Int64 recv_msg;
