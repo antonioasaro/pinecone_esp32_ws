@@ -25,6 +25,7 @@
 #include <rcl_interfaces/msg/log.h>
 #include <math.h>
 #include "motor_control.h"
+#include "ultrasonic.h"
 #endif
 
 #define RCCHECK(fn)                                                                      \
@@ -204,6 +205,7 @@ static size_t uart_port = UART_NUM_0;
 
 void app_main(void)
 {
+
 #if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
 	rmw_uros_set_custom_transport(
 		true,
@@ -217,12 +219,20 @@ void app_main(void)
 #endif // RMW_UXRCE_TRANSPORT_CUSTOM
 
 #ifdef ANTONIO
-	xTaskCreate((TaskFunction_t)motor_control_task,
-				"wheel_motor_task",
+	xTaskCreate((TaskFunction_t)ultrasonic_task,
+				"ultrasonic",
 				4096,
 				NULL,
 				1,
 				NULL);
+
+//	xTaskCreate((TaskFunction_t)motor_control_task,
+//				"wheel_motor_task",
+//				4096,
+//				NULL,
+//				1,
+//				NULL);
+//
 	sleep(5);
 #endif
 
