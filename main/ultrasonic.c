@@ -99,6 +99,6 @@ void ultrasonic_task(void)
       ESP_LOGI(TAG, "Distance is not readable");
     }
 
-    vTaskDelay(20 / portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }

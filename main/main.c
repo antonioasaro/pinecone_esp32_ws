@@ -226,13 +226,13 @@ void app_main(void)
 				1,
 				NULL);
 
-//	xTaskCreate((TaskFunction_t)motor_control_task,
-//				"wheel_motor_task",
-//				4096,
-//				NULL,
-//				1,
-//				NULL);
-//
+	xTaskCreate((TaskFunction_t)motor_control_task,
+				"wheel_motor_task",
+				4096,
+				NULL,
+				1,
+				NULL);
+
 	sleep(5);
 #endif
 
