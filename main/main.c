@@ -20,12 +20,13 @@
 #include "esp32_serial_transport.h"
 
 #ifdef ANTONIO
+#include <math.h>
 #include <string.h>
 #include <std_msgs/msg/int64.h>
 #include <rcl_interfaces/msg/log.h>
-#include <math.h>
 #include "motor_control.h"
-#include "ultrasonic.h"
+#include "ultrasonic_control.h"
+#include "mpu6050_control.h"
 #endif
 
 #define RCCHECK(fn)                                                                      \
@@ -219,12 +220,21 @@ void app_main(void)
 #endif // RMW_UXRCE_TRANSPORT_CUSTOM
 
 #ifdef ANTONIO
+	xTaskCreate((TaskFunction_t)mpu6050_task,
+				"mpu6050",
+				4096,
+				NULL,
+				1,
+				NULL);
+	sleep(1);
+
 	xTaskCreate((TaskFunction_t)ultrasonic_task,
 				"ultrasonic",
 				4096,
 				NULL,
 				1,
 				NULL);
+	sleep(1);
 
 	xTaskCreate((TaskFunction_t)motor_control_task,
 				"wheel_motor_task",
@@ -233,7 +243,7 @@ void app_main(void)
 				1,
 				NULL);
 
-	sleep(5);
+	sleep(1);
 #endif
 
 	xTaskCreate(micro_ros_task,

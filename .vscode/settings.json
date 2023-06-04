@@ -1,7 +1,8 @@
 {
     "idf.adapterTargetName": "esp32",
     "files.associations": {
-        "freertos.h": "c"
+        "freertos.h": "c",
+        "mpu6050_control.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
