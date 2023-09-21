@@ -28,8 +28,9 @@
 #include "ultrasonic_control.h"
 #define MPU6050_LIB
 #ifdef MPU6050_LIB
-#include <driver/i2c.h>
-#include "mpu6050.h"
+// #include <driver/i2c.h>
+// #include "mpu6050.h"
+#include "imu_control.h"
 #else
 #include "mpu6050_control.h"
 #endif
@@ -134,6 +135,7 @@ void micro_ros_task(void *arg)
 	// create node
 	rcl_node_t node;
 #ifdef ANTONIO
+    ESP_LOGI(TAG, "Starting pinecode_esp32 node");
 	RCCHECK(rclc_node_init_default(&node, "pinecone_esp32", "", &support));
 #else
 	RCCHECK(rclc_node_init_default(&node, "esp32_int32_publisher", "", &support));
@@ -228,38 +230,45 @@ void app_main(void)
 
 #ifdef ANTONIO
 #ifdef MPU6050_LIB
-#define PIN_SDA 21
-#define PIN_CLK 22
-#define I2C_ADDRESS 0x68
-	i2c_config_t conf = {
-		.mode = I2C_MODE_MASTER,
-		.sda_io_num = PIN_SDA, // select SDA GPIO specific to your project
-		.sda_pullup_en = GPIO_PULLUP_ENABLE,
-		.scl_io_num = PIN_CLK, // select SCL GPIO specific to your project
-		.scl_pullup_en = GPIO_PULLUP_ENABLE,
-		.master.clk_speed = 1000000, // select frequency specific to your project
-		.clk_flags = 0,				 // optional; you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here
-	};
-	ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &conf));
-	ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0));
+	// #define PIN_SDA 21
+	// #define PIN_CLK 22
+	// #define I2C_ADDRESS 0x68
+	// 	i2c_config_t conf = {
+	// 		.mode = I2C_MODE_MASTER,
+	// 		.sda_io_num = PIN_SDA, // select SDA GPIO specific to your project
+	// 		.sda_pullup_en = GPIO_PULLUP_ENABLE,
+	// 		.scl_io_num = PIN_CLK, // select SCL GPIO specific to your project
+	// 		.scl_pullup_en = GPIO_PULLUP_ENABLE,
+	// 		.master.clk_speed = 1000000, // select frequency specific to your project
+	// 		.clk_flags = 0,				 // optional; you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here
+	// 	};
+	// 	ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &conf));
+	// 	ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0));
 
-	static mpu6050_handle_t mpu6050_dev = NULL;
-	static mpu6050_acce_value_t acce;
-	static mpu6050_gyro_value_t gyro;
+	// 	static mpu6050_handle_t mpu6050_dev = NULL;
+	// 	static mpu6050_acce_value_t acce;
+	// 	static mpu6050_gyro_value_t gyro;
 
-	mpu6050_dev = mpu6050_create(0x0, 0x68);
-	mpu6050_config(mpu6050_dev, ACCE_FS_4G, GYRO_FS_500DPS);
-	mpu6050_wake_up(mpu6050_dev);
-	sleep(1);
+	// 	mpu6050_dev = mpu6050_create(0x0, 0x68);
+	// 	mpu6050_config(mpu6050_dev, ACCE_FS_4G, GYRO_FS_500DPS);
+	// 	mpu6050_wake_up(mpu6050_dev);
+	// 	sleep(1);
 
-	for (int i = 0; i < 32; i++)
-	{
-		mpu6050_get_acce(mpu6050_dev, &acce);
-		mpu6050_get_gyro(mpu6050_dev, &gyro);
-		ESP_LOGI(TAG, "mpu6050 acce %d %d %d", (int) acce.acce_x, (int) acce.acce_y, (int) acce.acce_z);
-		ESP_LOGI(TAG, "mpu6050 gyro %d %d %d", (int) gyro.gyro_x, (int) gyro.gyro_y, (int) gyro.gyro_z);
-		sleep(0.1);
-	}
+	// 	for (int i = 0; i < 32; i++)
+	// 	{
+	// 		mpu6050_get_acce(mpu6050_dev, &acce);
+	// 		mpu6050_get_gyro(mpu6050_dev, &gyro);
+	// 		ESP_LOGI(TAG, "mpu6050 acce %d %d %d", (int) acce.acce_x, (int) acce.acce_y, (int) acce.acce_z);
+	// 		ESP_LOGI(TAG, "mpu6050 gyro %d %d %d", (int) gyro.gyro_x, (int) gyro.gyro_y, (int) gyro.gyro_z);
+	// 		sleep(0.1);
+	// 	}
+	// 	sleep(1);
+	xTaskCreate((TaskFunction_t)imu_task,
+				"mpu6050",
+				4096,
+				NULL,
+				1,
+				NULL);
 	sleep(1);
 #else
 	xTaskCreate((TaskFunction_t)mpu6050_task,
