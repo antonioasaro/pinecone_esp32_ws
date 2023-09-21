@@ -36,3 +36,4 @@ sdkconfig*
 
 # Directories
 build/
+dependencies.lock

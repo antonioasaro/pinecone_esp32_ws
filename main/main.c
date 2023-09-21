@@ -252,7 +252,7 @@ void app_main(void)
 	mpu6050_wake_up(mpu6050_dev);
 	sleep(1);
 
-	for (int i = 0; i < 1024; i++)
+	for (int i = 0; i < 32; i++)
 	{
 		mpu6050_get_acce(mpu6050_dev, &acce);
 		mpu6050_get_gyro(mpu6050_dev, &gyro);
